@@ -11,6 +11,9 @@ function App() {
     <>
       <h1>Hello pos
       </h1>
+
+      {/* header section */}
+      <div className='min-h-screen bg-red-600'></div>
     </>
   )
 }
