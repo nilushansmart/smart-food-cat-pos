@@ -1,0 +1,70 @@
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+
+spring:
+  application:
+    name: smart-catering-service
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/caterpos?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+    open-in-view: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+app:
+  jwt:
+    # 256-bit hex encoded default secret key for development; override in prod via JWT_SECRET
+    secret: ${JWT_SECRET:9a4f2c8d3e7b1a5f6e8d2c4b7a1e3f5a9b2c4d6e8f1a3b5c7d9e1f3a5b7c9d1e}
+    expiration-ms: 86400000 # 24 Hours
+    refresh-expiration-ms: 604800000 # 7 Days
+    receipt-token-secret: ${RECEIPT_SECRET:c8d3e7b1a5f6e8d2c4b7a1e3f5a9b2c4d6e8f1a3b5c7d9e1f3a5b7c9d1e9a4f2}
+    receipt-token-expiration-ms: 259200000 # 3 Days
+  catering:
+    name: "Stitch Gourmet Catering"
+    address: "88 Culinary Boulevard, Suite 400"
+    phone: "+1 (800) 555-FOOD"
+    email: "orders@stitchcatering.com"
+    tax-rate: 0.05
+    currency: "$"
+  whatsapp:
+    default-provider: ${WHATSAPP_PROVIDER:deeplink} # 'deeplink' or 'cloudapi'
+    cloud-api:
+      api-url: ${WHATSAPP_API_URL:https://graph.facebook.com/v18.0}
+      phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+      access-token: ${WHATSAPP_ACCESS_TOKEN:}
+    deep-link:
+      base-url: "https://wa.me/"
+  google-maps:
+    api-key: ${GOOGLE_MAPS_API_KEY:}
+    kitchen-address: "88 Culinary Boulevard, Suite 400"
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,http://localhost:5174}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+logging:
+  level:
+    root: INFO
+    com.cateringpos: DEBUG
+    org.springframework.security: INFO
+
