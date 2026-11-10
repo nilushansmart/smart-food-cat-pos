@@ -27,7 +27,7 @@ import { CartContent, MobileCartDrawer } from './CartDrawer';
 import { NumberCounter } from '../common/NumberCounter';
 
 export const POSScreen = () => {
-  const { menuItems, categories, addToCart, cart } = useApp();
+  const { menuItems, categories, addToCart, cart, cateringSettings } = useApp();
   const theme = useTheme();
 
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -314,7 +314,7 @@ export const POSScreen = () => {
                           sx={{ fontWeight: 800, color: theme.palette.text.primary }}
                           className="tabular-nums"
                         >
-                          ${item.price.toFixed(2)}
+                          {cateringSettings?.currency || 'Rs. '}{item.price.toLocaleString()}
                         </Typography>
 
                         <Box sx={{ display: 'flex', gap: 0.8 }}>

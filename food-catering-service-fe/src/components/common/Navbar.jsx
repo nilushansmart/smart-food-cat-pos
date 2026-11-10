@@ -14,6 +14,8 @@ import {
   useTheme,
   ListItemIcon,
   ListItemText,
+  Stack,
+  Divider,
 } from '@mui/material';
 import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
@@ -26,6 +28,9 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import BadgeIcon from '@mui/icons-material/Badge';
 import SoupKitchenIcon from '@mui/icons-material/SoupKitchen';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import TimelineIcon from '@mui/icons-material/Timeline';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 import { useApp } from '../../context/AppContext';
 
 export const Navbar = ({ onOpenCartMobile }) => {
@@ -38,12 +43,15 @@ export const Navbar = ({ onOpenCartMobile }) => {
     cateringSettings,
     soundEnabled,
     setSoundEnabled,
+    currentScreen,
+    setCurrentScreen,
   } = useApp();
 
   const theme = useTheme();
   const [roleAnchorEl, setRoleAnchorEl] = useState(null);
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const totalCartValue = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const handleOpenRoleMenu = (event) => {
     setRoleAnchorEl(event.currentTarget);
@@ -58,37 +66,16 @@ export const Navbar = ({ onOpenCartMobile }) => {
     handleCloseRoleMenu();
   };
 
-  const getRoleIcon = (role) => {
-    switch (role) {
-      case 'Admin':
-        return <AdminPanelSettingsIcon fontSize="small" />;
-      case 'Staff':
-        return <BadgeIcon fontSize="small" />;
-      case 'Kitchen':
-        return <SoupKitchenIcon fontSize="small" />;
-      case 'Customer':
-        return <PersonOutlinedIcon fontSize="small" />;
-      default:
-        return <PersonOutlinedIcon fontSize="small" />;
-    }
-  };
-
-  const getRoleColor = (role) => {
-    switch (role) {
-      case 'Admin':
-        return { bg: 'rgba(249, 115, 22, 0.15)', text: '#F97316' };
-      case 'Staff':
-        return { bg: 'rgba(59, 130, 246, 0.15)', text: '#3B82F6' };
-      case 'Kitchen':
-        return { bg: 'rgba(234, 88, 12, 0.15)', text: '#EA580C' };
-      case 'Customer':
-        return { bg: 'rgba(22, 163, 74, 0.15)', text: '#16A34A' };
-      default:
-        return { bg: 'rgba(120, 113, 108, 0.15)', text: '#78716C' };
-    }
-  };
-
-  const roleStyle = getRoleColor(currentUser?.role);
+  // Customer navigation pages
+  const customerNavPages = [
+    { id: 'home', label: 'Home' },
+    { id: 'menu', label: 'Food Menu' },
+    { id: 'packages', label: 'Packages' },
+    { id: 'custom-order', label: 'Customize' },
+    { id: 'events', label: 'Special Events' },
+    { id: 'about', label: 'About Us' },
+    { id: 'contact', label: 'Contact' },
+  ];
 
   return (
     <AppBar
@@ -101,20 +88,23 @@ export const Navbar = ({ onOpenCartMobile }) => {
         zIndex: (th) => th.zIndex.drawer + 1,
       }}
     >
-      <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, sm: 3 }, minHeight: 64 }}>
-        {/* Brand & Name */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, sm: 3 }, minHeight: 68 }}>
+        {/* Brand & Logo */}
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }}
+          onClick={() => setCurrentScreen('home')}
+        >
           <Box
             sx={{
-              width: 40,
-              height: 40,
-              borderRadius: '12px',
-              backgroundColor: '#F97316',
+              width: 42,
+              height: 42,
+              borderRadius: '14px',
+              background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#FFFFFF',
-              boxShadow: '0 4px 10px rgba(249, 115, 22, 0.35)',
+              boxShadow: '0 4px 12px rgba(249, 115, 22, 0.35)',
             }}
           >
             <RestaurantMenuIcon fontSize="medium" />
@@ -123,116 +113,191 @@ export const Navbar = ({ onOpenCartMobile }) => {
             <Typography
               variant="h6"
               sx={{
-                fontWeight: 700,
+                fontWeight: 800,
                 lineHeight: 1.1,
-                fontSize: { xs: '1rem', sm: '1.15rem' },
+                fontSize: { xs: '1rem', sm: '1.2rem' },
+                letterSpacing: '-0.02em',
                 color: theme.palette.text.primary,
               }}
             >
-              {cateringSettings.name}
+              Ceylon Feast
             </Typography>
             <Typography
               variant="caption"
               sx={{
-                color: theme.palette.text.secondary,
-                fontWeight: 500,
-                display: { xs: 'none', sm: 'block' },
+                color: '#EA580C',
+                fontWeight: 700,
+                fontSize: '0.72rem',
+                display: 'block',
               }}
             >
-              Online Catering & Event Booking POS
+              🇱🇰 Smart Food Catering • Sri Lanka
             </Typography>
           </Box>
         </Box>
 
-        {/* Action Controls */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 } }}>
-          {/* Quick Role Switcher Chip */}
+        {/* Center Navigation Links (Visible on Desktop & Tablet) */}
+        <Stack
+          direction="row"
+          spacing={0.5}
+          sx={{
+            display: { xs: 'none', lg: 'flex' },
+            alignItems: 'center',
+          }}
+        >
+          {customerNavPages.map((page) => {
+            const isActive = currentScreen === page.id;
+            return (
+              <Button
+                key={page.id}
+                onClick={() => setCurrentScreen(page.id)}
+                size="small"
+                sx={{
+                  color: isActive ? '#F97316' : theme.palette.text.secondary,
+                  fontWeight: isActive ? 800 : 600,
+                  fontSize: '0.88rem',
+                  borderRadius: '12px',
+                  px: 1.5,
+                  py: 0.8,
+                  backgroundColor: isActive ? 'rgba(249, 115, 22, 0.08)' : 'transparent',
+                  '&:hover': {
+                    color: '#F97316',
+                    backgroundColor: 'rgba(249, 115, 22, 0.05)',
+                  },
+                }}
+              >
+                {page.label}
+              </Button>
+            );
+          })}
+        </Stack>
+
+        {/* Right Side Controls */}
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          {/* Quick Track Order Pill */}
           <Button
-            onClick={handleOpenRoleMenu}
             size="small"
-            variant="outlined"
-            startIcon={getRoleIcon(currentUser?.role)}
-            endIcon={<SwapHorizIcon sx={{ fontSize: 18 }} />}
+            startIcon={<TimelineIcon />}
+            onClick={() => setCurrentScreen('tracking')}
             sx={{
-              borderRadius: 9999,
-              borderColor: 'transparent',
-              backgroundColor: roleStyle.bg,
-              color: roleStyle.text,
-              fontWeight: 600,
-              px: { xs: 1.2, sm: 1.8 },
-              py: 0.6,
-              minHeight: 38,
-              '&:hover': {
-                backgroundColor: roleStyle.bg,
-                borderColor: roleStyle.text,
-              },
+              display: { xs: 'none', sm: 'inline-flex' },
+              borderRadius: '12px',
+              border: `1px solid ${theme.palette.divider}`,
+              color: currentScreen === 'tracking' ? '#F97316' : theme.palette.text.primary,
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              px: 1.6,
             }}
           >
-            <Typography variant="body2" sx={{ fontWeight: 600, display: { xs: 'none', sm: 'inline' } }}>
-              Role:
-            </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 700, ml: { sm: 0.5 } }}>
-              {currentUser?.role}
+            Track Order
+          </Button>
+
+          {/* Cart Pill with Price */}
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={
+              <Badge badgeContent={totalCartCount} color="error" overlap="circular">
+                <ShoppingBagOutlinedIcon fontSize="small" />
+              </Badge>
+            }
+            onClick={() => setCurrentScreen('cart')}
+            sx={{
+              backgroundColor: '#F97316',
+              '&:hover': { backgroundColor: '#EA580C' },
+              borderRadius: '14px',
+              fontWeight: 800,
+              px: { xs: 1.5, sm: 2 },
+              py: 0.8,
+              boxShadow: '0 4px 12px rgba(249, 115, 22, 0.25)',
+            }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 800 }}>
+              {totalCartCount > 0 ? `Rs. ${totalCartValue.toLocaleString()}` : 'Cart'}
             </Typography>
           </Button>
 
-          {/* Role Selection Dropdown */}
+          {/* Admin Dashboard / Suite Quick Switch */}
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<DashboardIcon />}
+            onClick={() => setCurrentScreen('dashboard')}
+            sx={{
+              borderRadius: '14px',
+              borderColor: currentScreen === 'dashboard' ? '#3B82F6' : theme.palette.divider,
+              bgcolor: currentScreen === 'dashboard' ? 'rgba(59, 130, 246, 0.08)' : 'transparent',
+              color: currentScreen === 'dashboard' ? '#2563EB' : theme.palette.text.primary,
+              fontWeight: 700,
+              px: { xs: 1, sm: 1.8 },
+              display: { xs: 'none', sm: 'inline-flex' },
+            }}
+          >
+            Admin Suite
+          </Button>
+
+          {/* Role Switcher */}
+          <Tooltip title="Switch Role Perspective">
+            <Button
+              onClick={handleOpenRoleMenu}
+              size="small"
+              startIcon={<SwapHorizIcon sx={{ fontSize: 18 }} />}
+              sx={{
+                borderRadius: '12px',
+                border: `1px solid ${theme.palette.divider}`,
+                color: theme.palette.text.primary,
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                px: 1.2,
+              }}
+            >
+              {currentUser?.role}
+            </Button>
+          </Tooltip>
+
+          {/* Role Selection Menu */}
           <Menu
             anchorEl={roleAnchorEl}
             open={Boolean(roleAnchorEl)}
             onClose={handleCloseRoleMenu}
-            PaperProps={{
-              sx: {
-                borderRadius: 3,
-                mt: 1.5,
-                minWidth: 180,
-                boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-              },
-            }}
+            PaperProps={{ sx: { borderRadius: '16px', minWidth: 200, p: 0.5 } }}
           >
             <MenuItem onClick={() => handleSelectRole('Admin')} selected={currentUser?.role === 'Admin'}>
-              <ListItemIcon>
-                <AdminPanelSettingsIcon sx={{ color: '#F97316' }} />
-              </ListItemIcon>
-              <ListItemText primary="Admin" secondary="Full System Access" />
-            </MenuItem>
-            <MenuItem onClick={() => handleSelectRole('Staff')} selected={currentUser?.role === 'Staff'}>
-              <ListItemIcon>
-                <BadgeIcon sx={{ color: '#3B82F6' }} />
-              </ListItemIcon>
-              <ListItemText primary="Staff" secondary="Fast Order POS" />
+              <ListItemIcon><AdminPanelSettingsIcon sx={{ color: '#F97316' }} /></ListItemIcon>
+              <ListItemText primary="Admin Portal" secondary="Dashboard & Analytics" />
             </MenuItem>
             <MenuItem onClick={() => handleSelectRole('Kitchen')} selected={currentUser?.role === 'Kitchen'}>
-              <ListItemIcon>
-                <SoupKitchenIcon sx={{ color: '#EA580C' }} />
-              </ListItemIcon>
-              <ListItemText primary="Kitchen" secondary="Live Kanban Board" />
+              <ListItemIcon><SoupKitchenIcon sx={{ color: '#EA580C' }} /></ListItemIcon>
+              <ListItemText primary="Kitchen KDS" secondary="Live Prep & Stock" />
+            </MenuItem>
+            <MenuItem onClick={() => { setCurrentScreen('delivery-admin'); handleCloseRoleMenu(); }}>
+              <ListItemIcon><LocalShippingIcon sx={{ color: '#16A34A' }} /></ListItemIcon>
+              <ListItemText primary="Delivery Logistics" secondary="Riders & Routes" />
             </MenuItem>
             <MenuItem onClick={() => handleSelectRole('Customer')} selected={currentUser?.role === 'Customer'}>
-              <ListItemIcon>
-                <PersonOutlinedIcon sx={{ color: '#16A34A' }} />
-              </ListItemIcon>
-              <ListItemText primary="Customer" secondary="Menu & Tracking" />
+              <ListItemIcon><PersonOutlinedIcon sx={{ color: '#3B82F6' }} /></ListItemIcon>
+              <ListItemText primary="Customer View" secondary="Storefront & Menus" />
             </MenuItem>
           </Menu>
 
-          {/* Sound Toggle (especially useful for Kitchen audio chime) */}
-          <Tooltip title={soundEnabled ? 'Kitchen Bell Sound: Enabled' : 'Kitchen Bell Sound: Muted'}>
+          {/* Sound Toggle */}
+          <Tooltip title={soundEnabled ? 'Kitchen Bell: On' : 'Kitchen Bell: Muted'}>
             <IconButton
               onClick={() => setSoundEnabled((prev) => !prev)}
               size="small"
               sx={{
                 color: soundEnabled ? '#F97316' : theme.palette.text.secondary,
                 border: `1px solid ${theme.palette.divider}`,
-                width: 40,
-                height: 40,
+                width: 38,
+                height: 38,
+                display: { xs: 'none', sm: 'inline-flex' },
               }}
             >
               {soundEnabled ? <VolumeUpIcon fontSize="small" /> : <VolumeOffIcon fontSize="small" />}
             </IconButton>
           </Tooltip>
 
-          {/* Theme Mode Toggle */}
+          {/* Dark Mode Toggle */}
           <Tooltip title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
             <IconButton
               onClick={toggleDarkMode}
@@ -240,50 +305,21 @@ export const Navbar = ({ onOpenCartMobile }) => {
               sx={{
                 color: theme.palette.text.primary,
                 border: `1px solid ${theme.palette.divider}`,
-                width: 40,
-                height: 40,
+                width: 38,
+                height: 38,
               }}
             >
               {darkMode ? <Brightness7Icon fontSize="small" sx={{ color: '#FACC15' }} /> : <Brightness4Icon fontSize="small" />}
             </IconButton>
           </Tooltip>
 
-          {/* Mobile Cart Button with count badge (shown when in POS or Customer Menu on small screens) */}
-          {(currentUser?.role === 'Admin' || currentUser?.role === 'Staff' || currentUser?.role === 'Customer') && (
-            <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-              <IconButton
-                onClick={onOpenCartMobile}
-                sx={{
-                  backgroundColor: '#F97316',
-                  color: '#FFFFFF',
-                  width: 40,
-                  height: 40,
-                  '&:hover': {
-                    backgroundColor: '#EA580C',
-                  },
-                }}
-              >
-                <Badge badgeContent={totalCartCount} color="error" overlap="circular">
-                  <ShoppingBagOutlinedIcon fontSize="small" />
-                </Badge>
-              </IconButton>
-            </Box>
-          )}
-
-          {/* User Avatar */}
+          {/* Avatar */}
           <Avatar
             src={currentUser?.avatar}
             alt={currentUser?.name}
-            sx={{
-              width: 38,
-              height: 38,
-              border: '2px solid #F97316',
-              display: { xs: 'none', sm: 'inline-flex' },
-            }}
-          >
-            {currentUser?.name?.[0]}
-          </Avatar>
-        </Box>
+            sx={{ width: 36, height: 36, border: '2px solid #F97316', display: { xs: 'none', md: 'inline-flex' } }}
+          />
+        </Stack>
       </Toolbar>
     </AppBar>
   );

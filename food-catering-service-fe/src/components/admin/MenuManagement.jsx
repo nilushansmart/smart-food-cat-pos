@@ -38,6 +38,7 @@ export const MenuManagement = () => {
     updateMenuItem,
     toggleItemAvailability,
     deleteMenuItem,
+    cateringSettings,
   } = useApp();
 
   const theme = useTheme();
@@ -256,7 +257,7 @@ export const MenuManagement = () => {
                     {item.name}
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 800, color: '#F97316' }} className="tabular-nums">
-                    ${item.price.toFixed(2)}
+                    {cateringSettings?.currency || 'Rs. '}{item.price.toLocaleString()}
                   </Typography>
                 </Box>
 

@@ -93,7 +93,7 @@ export const generatePdfReceipt = (order, cateringConfig) => {
     doc.text(itemName, 6, y);
     doc.setFont('helvetica', 'normal');
     doc.text(`${item.quantity}`, 46, y, { align: 'center' });
-    doc.text(`$${(item.price * item.quantity).toFixed(2)}`, pageWidth - 6, y, { align: 'right' });
+    doc.text(`${cateringConfig.currency || 'Rs. '}${(item.price * item.quantity).toLocaleString()}`, pageWidth - 6, y, { align: 'right' });
     y += 4;
 
     if (item.specialNote) {
@@ -113,11 +113,11 @@ export const generatePdfReceipt = (order, cateringConfig) => {
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(80, 80, 80);
   doc.text('Subtotal:', 6, y);
-  doc.text(`$${order.subtotal.toFixed(2)}`, pageWidth - 6, y, { align: 'right' });
+  doc.text(`${cateringConfig.currency || 'Rs. '}${order.subtotal?.toLocaleString()}`, pageWidth - 6, y, { align: 'right' });
   y += 4;
 
   doc.text(`Tax (${(cateringConfig.taxRate * 100).toFixed(0)}%):`, 6, y);
-  doc.text(`$${order.tax.toFixed(2)}`, pageWidth - 6, y, { align: 'right' });
+  doc.text(`${cateringConfig.currency || 'Rs. '}${order.tax?.toLocaleString()}`, pageWidth - 6, y, { align: 'right' });
   y += 6;
 
   doc.setLineDashPattern([], 0);
@@ -128,7 +128,7 @@ export const generatePdfReceipt = (order, cateringConfig) => {
   doc.setFontSize(11);
   doc.setTextColor(22, 163, 74); // Green secondary
   doc.text('TOTAL:', 6, y);
-  doc.text(`$${order.total.toFixed(2)}`, pageWidth - 6, y, { align: 'right' });
+  doc.text(`${cateringConfig.currency || 'Rs. '}${order.total?.toLocaleString()}`, pageWidth - 6, y, { align: 'right' });
   y += 9;
 
   // Footer / Barcode decoration

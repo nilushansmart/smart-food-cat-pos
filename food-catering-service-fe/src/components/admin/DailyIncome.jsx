@@ -26,7 +26,7 @@ import { NumberCounter } from '../common/NumberCounter';
 import { reportsApi } from '../../api';
 
 export const DailyIncome = () => {
-  const { orders, openReceiptModal } = useApp();
+  const { orders, openReceiptModal, cateringSettings } = useApp();
   const theme = useTheme();
 
   // Selected date formatted as YYYY-MM-DD
@@ -149,10 +149,10 @@ export const DailyIncome = () => {
               </Box>
             </Box>
             <Typography variant="h4" sx={{ fontWeight: 800, color: '#16A34A' }} className="tabular-nums">
-              <NumberCounter value={dayTotalIncome} prefix="$" />
+              <NumberCounter value={dayTotalIncome} prefix={cateringSettings?.currency || 'Rs. '} />
             </Typography>
             <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-              Subtotal: ${daySubtotal.toFixed(2)} | Tax: ${dayTax.toFixed(2)}
+              Subtotal: {cateringSettings?.currency || 'Rs. '}{daySubtotal.toLocaleString()} | Tax: {cateringSettings?.currency || 'Rs. '}{dayTax.toLocaleString()}
             </Typography>
           </Card>
         </Grid>
@@ -209,7 +209,7 @@ export const DailyIncome = () => {
               </Box>
             </Box>
             <Typography variant="h4" sx={{ fontWeight: 800 }} className="tabular-nums">
-              <NumberCounter value={avgOrderValue} prefix="$" />
+              <NumberCounter value={avgOrderValue} prefix={cateringSettings?.currency || 'Rs. '} />
             </Typography>
             <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
               Average basket per catering transaction
@@ -275,10 +275,10 @@ export const DailyIncome = () => {
                         {order.items.map((i) => `${i.quantity}x ${i.name}`).join(', ')}
                       </Typography>
                     </TableCell>
-                    <TableCell className="tabular-nums">${order.subtotal.toFixed(2)}</TableCell>
-                    <TableCell className="tabular-nums">${order.tax.toFixed(2)}</TableCell>
+                    <TableCell className="tabular-nums">{cateringSettings?.currency || 'Rs. '}{order.subtotal?.toLocaleString()}</TableCell>
+                    <TableCell className="tabular-nums">{cateringSettings?.currency || 'Rs. '}{order.tax?.toLocaleString()}</TableCell>
                     <TableCell sx={{ fontWeight: 700, color: '#16A34A' }} className="tabular-nums">
-                      ${order.total.toFixed(2)}
+                      {cateringSettings?.currency || 'Rs. '}{order.total?.toLocaleString()}
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={order.status} size="small" />

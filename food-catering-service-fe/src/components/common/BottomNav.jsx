@@ -12,7 +12,8 @@ import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import SoupKitchenIcon from '@mui/icons-material/SoupKitchen';
 import HistoryIcon from '@mui/icons-material/History';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
+import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
+import HomeIcon from '@mui/icons-material/Home';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
@@ -63,9 +64,11 @@ export const BottomNav = ({ onOpenMoreMenu }) => {
         ];
       case 'Customer':
         return [
-          { id: 'customer-menu', label: 'Menu', icon: <MenuBookIcon /> },
+          { id: 'home', label: 'Home', icon: <HomeIcon /> },
+          { id: 'menu', label: 'Menu', icon: <RestaurantMenuIcon /> },
+          { id: 'packages', label: 'Packages', icon: <RestaurantMenuIcon /> },
           {
-            id: 'customer-cart',
+            id: 'cart',
             label: 'Cart',
             icon: (
               <Badge badgeContent={cartCount} color="error">
@@ -73,8 +76,7 @@ export const BottomNav = ({ onOpenMoreMenu }) => {
               </Badge>
             ),
           },
-          { id: 'customer-tracking', label: 'Track Order', icon: <TimelineIcon /> },
-          { id: 'customer-history', label: 'Receipts', icon: <ReceiptLongIcon /> },
+          { id: 'tracking', label: 'Tracking', icon: <TimelineIcon /> },
         ];
       default:
         return [];

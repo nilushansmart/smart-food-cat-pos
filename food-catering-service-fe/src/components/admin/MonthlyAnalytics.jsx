@@ -23,9 +23,11 @@ import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import PieChartIcon from '@mui/icons-material/PieChart';
 import StarIcon from '@mui/icons-material/Star';
 import { NumberCounter } from '../common/NumberCounter';
+import { useApp } from '../../context/AppContext';
 import { reportsApi } from '../../api';
 
 export const MonthlyAnalytics = () => {
+  const { cateringSettings } = useApp();
   const theme = useTheme();
 
   const [selectedMonth, setSelectedMonth] = useState('2026-11');
@@ -55,12 +57,12 @@ export const MonthlyAnalytics = () => {
     };
   }, [selectedMonth]);
 
-  // Weekly income distribution data
+  // Weekly income distribution data in LKR
   const weeklyData = [
-    { week: 'Week 1 (Nov 1 - 7)', revenue: 4400.90, orders: 177 },
-    { week: 'Week 2 (Nov 8 - 14)', revenue: 2680.40, orders: 112 },
-    { week: 'Week 3 (Nov 15 - 21)', revenue: 3820.00, orders: 145 },
-    { week: 'Week 4 (Nov 22 - 30)', revenue: 4150.20, orders: 160 },
+    { week: 'Week 1 (Nov 1 - 7)', revenue: 685000, orders: 177 },
+    { week: 'Week 2 (Nov 8 - 14)', revenue: 742000, orders: 192 },
+    { week: 'Week 3 (Nov 15 - 21)', revenue: 810500, orders: 215 },
+    { week: 'Week 4 (Nov 22 - 30)', revenue: 945000, orders: 248 },
   ];
 
   const maxWeeklyRevenue = Math.max(...weeklyData.map((w) => w.revenue));
@@ -72,12 +74,12 @@ export const MonthlyAnalytics = () => {
     ? Number(serverAnalytics.totalMonthlyOrders)
     : weeklyData.reduce((sum, w) => sum + w.orders, 0);
 
-  // Category breakdown calculation
+  // Category breakdown calculation (LKR)
   const defaultCategoryStats = [
-    { name: 'Rice Dishes', orders: 248, percentage: 42, revenue: 6320.50, color: '#F97316' },
-    { name: 'Snacks & Starters', orders: 165, percentage: 28, revenue: 4210.00, color: '#3B82F6' },
-    { name: 'Desserts', orders: 106, percentage: 18, revenue: 2709.00, color: '#16A34A' },
-    { name: 'Beverages', orders: 75, percentage: 12, revenue: 1812.00, color: '#FACC15' },
+    { name: 'Catering Packages', orders: 320, percentage: 45, revenue: 1435000, color: '#F97316' },
+    { name: 'Rice & Biryani', orders: 248, percentage: 30, revenue: 955000, color: '#3B82F6' },
+    { name: 'Short Eats & Platters', orders: 165, percentage: 15, revenue: 478000, color: '#16A34A' },
+    { name: 'Desserts & Beverages', orders: 112, percentage: 10, revenue: 314000, color: '#FACC15' },
   ];
 
   const paletteColors = ['#F97316', '#3B82F6', '#16A34A', '#FACC15', '#8B5CF6'];
@@ -92,13 +94,13 @@ export const MonthlyAnalytics = () => {
       }))
     : defaultCategoryStats;
 
-  // Top selling items leaderboard
+  // Top selling items leaderboard (LKR)
   const defaultTopSellingItems = [
-    { name: 'Royal Chicken Biryani', category: 'Rice', sold: 184, revenue: 2300.00, pct: 95 },
-    { name: 'Fragrant Ghee Rice & Curry', category: 'Rice', sold: 142, revenue: 1420.00, pct: 75 },
-    { name: 'Crispy Veggie Samosas (4 pcs)', category: 'Snacks', sold: 128, revenue: 704.00, pct: 68 },
-    { name: 'Silky Caramel Pudding', category: 'Desserts', sold: 98, revenue: 470.40, pct: 52 },
-    { name: 'Fresh Mint Lime Soda', category: 'Beverages', sold: 86, revenue: 301.00, pct: 45 },
+    { name: 'Boardroom Lunch Package', category: 'Catering Packages', sold: 280, revenue: 518000, pct: 98 },
+    { name: 'Grand Ceylon Biryani Party Tray', category: 'Trays & Platters', sold: 195, revenue: 2827500, pct: 92 },
+    { name: 'Dutch Burgher Lamprais Platter', category: 'Trays & Platters', sold: 142, revenue: 1917000, pct: 84 },
+    { name: 'Royal Cardamom Watalappan Pot', category: 'Desserts', sold: 120, revenue: 420000, pct: 72 },
+    { name: 'Cocktail Short Eats Platter (30 Pcs)', category: 'Short Eats', sold: 110, revenue: 748000, pct: 65 },
   ];
 
   const topSellingItems = serverAnalytics?.topSellingItems && serverAnalytics.topSellingItems.length > 0
@@ -174,7 +176,7 @@ export const MonthlyAnalytics = () => {
               </Box>
             </Box>
             <Typography variant="h4" sx={{ fontWeight: 800, color: '#16A34A' }} className="tabular-nums">
-              <NumberCounter value={totalMonthlyIncome} prefix="$" />
+              <NumberCounter value={totalMonthlyIncome} prefix={cateringSettings?.currency || 'Rs. '} />
             </Typography>
             <Typography variant="caption" sx={{ color: '#16A34A', fontWeight: 600 }}>
               +24.6% vs previous month
@@ -430,7 +432,7 @@ export const MonthlyAnalytics = () => {
                       <TableCell className="tabular-nums">{cat.orders}</TableCell>
                       <TableCell className="tabular-nums">{cat.percentage}%</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: '#16A34A' }} className="tabular-nums">
-                        ${cat.revenue.toFixed(2)}
+                        {cateringSettings?.currency || 'Rs. '}{cat.revenue.toLocaleString()}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -472,7 +474,7 @@ export const MonthlyAnalytics = () => {
                       </Typography>
                     </Box>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: '#16A34A' }} className="tabular-nums">
-                      ${item.revenue.toFixed(2)}
+                      {cateringSettings?.currency || 'Rs. '}{item.revenue.toLocaleString()}
                     </Typography>
                   </Box>
 

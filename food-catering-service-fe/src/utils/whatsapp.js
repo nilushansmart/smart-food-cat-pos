@@ -21,16 +21,17 @@ export const formatWhatsAppReceipt = (order, cateringConfig) => {
     orderDetails += `*📍 Delivery Address:* ${order.deliveryAddress}\n`;
   }
   
+  const currency = cateringConfig.currency || 'Rs. ';
   const itemsSection = order.items
     .map(
       (item) =>
-        `▪ ${item.quantity}x ${item.name} - $${(item.price * item.quantity).toFixed(2)}${
+        `▪ ${item.quantity}x ${item.name} - ${currency}${(item.price * item.quantity).toLocaleString()}${
           item.specialNote ? `\n   ↳ _Note: ${item.specialNote}_` : ''
         }`
     )
     .join('\n');
 
-  const totals = `\n─────────────────────\n*Subtotal:* $${order.subtotal.toFixed(2)}\n*Tax (${(cateringConfig.taxRate * 100).toFixed(0)}%):* $${order.tax.toFixed(2)}\n*Total Paid:* *$${order.total.toFixed(2)}*`;
+  const totals = `\n─────────────────────\n*Subtotal:* ${currency}${order.subtotal?.toLocaleString()}\n*Tax (${(cateringConfig.taxRate * 100).toFixed(0)}%):* ${currency}${order.tax?.toLocaleString()}\n*Total Paid:* *${currency}${order.total?.toLocaleString()}*`;
 
   const footer = `\n─────────────────────\nThank you for booking with ${cateringConfig.name}!\nOur online catering team will prepare your dishes fresh on schedule.\nSupport Helpline: ${cateringConfig.phone}.`;
 

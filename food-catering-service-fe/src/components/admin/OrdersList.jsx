@@ -267,7 +267,7 @@ export const OrdersList = () => {
                           )}
                         </TableCell>
                         <TableCell sx={{ fontWeight: 800, color: '#16A34A' }} className="tabular-nums">
-                          ${order.total.toFixed(2)}
+                          {cateringSettings.currency || 'Rs. '}{order.total?.toLocaleString()}
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={order.status} size="small" />
@@ -368,7 +368,7 @@ export const OrdersList = () => {
                       Total
                     </Typography>
                     <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#16A34A' }} className="tabular-nums">
-                      ${order.total.toFixed(2)}
+                      {cateringSettings.currency || 'Rs. '}{order.total?.toLocaleString()}
                     </Typography>
                   </Box>
 

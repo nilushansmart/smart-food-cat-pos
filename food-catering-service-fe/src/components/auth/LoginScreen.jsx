@@ -96,7 +96,7 @@ export const LoginScreen = ({ onLoginSuccess }) => {
               {cateringSettings.name}
             </Typography>
             <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-              Food Catering POS & Preparation System
+              Smart Cloud Kitchen & Food Catering Platform — Sri Lanka
             </Typography>
           </Box>
 

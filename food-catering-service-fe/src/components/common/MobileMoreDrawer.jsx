@@ -17,7 +17,11 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import TodayIcon from '@mui/icons-material/Today';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import SoupKitchenIcon from '@mui/icons-material/SoupKitchen';
+import PaymentIcon from '@mui/icons-material/Payment';
+import CalculateIcon from '@mui/icons-material/Calculate';
+import CelebrationIcon from '@mui/icons-material/Celebration';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import { useApp } from '../../context/AppContext';
 
@@ -32,13 +36,16 @@ export const MobileMoreDrawer = ({ open, onClose }) => {
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard Overview', icon: DashboardIcon },
-    { id: 'pos', label: 'Create Order (POS)', icon: PointOfSaleIcon },
-    { id: 'orders', label: 'Orders List', icon: ReceiptLongIcon },
-    { id: 'daily-income', label: 'Daily Income Report', icon: TodayIcon },
-    { id: 'monthly-analytics', label: 'Monthly Analytics', icon: BarChartIcon },
+    { id: 'orders', label: 'Orders & Bookings', icon: ReceiptLongIcon },
+    { id: 'kitchen-display', label: 'Kitchen KDS & Batch Prep', icon: SoupKitchenIcon },
+    { id: 'delivery-admin', label: 'Delivery Logistics', icon: LocalShippingIcon },
+    { id: 'payments-admin', label: 'Payments & PayHere Logs', icon: PaymentIcon },
+    { id: 'custom-order', label: 'Customize Your Order', icon: CalculateIcon },
+    { id: 'events', label: 'Special Events Booking', icon: CelebrationIcon },
     { divider: true },
-    { id: 'menu', label: 'Menu Catalog Management', icon: RestaurantMenuIcon },
+    { id: 'menu-admin', label: 'Menu & Packages Management', icon: RestaurantMenuIcon },
     { id: 'users', label: 'User & Staff Management', icon: PeopleIcon },
+    { id: 'monthly-analytics', label: 'Monthly Sales Analytics', icon: BarChartIcon },
     { id: 'settings', label: 'Branding & Receipt Settings', icon: SettingsIcon },
   ];
 

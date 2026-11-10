@@ -6,6 +6,9 @@ import {
   INITIAL_USERS,
   CATERING_SETTINGS_DEFAULT,
   INITIAL_CATEGORIES,
+  INITIAL_INGREDIENTS,
+  INITIAL_DRIVERS,
+  TOP_CUSTOMER_REVIEWS,
 } from '../data/mockData';
 import { sound } from '../utils/audio';
 import {
@@ -86,6 +89,9 @@ export const AppProvider = ({ children }) => {
   const [orders, setOrders] = useState(INITIAL_ORDERS);
   const [users, setUsers] = useState(INITIAL_USERS);
   const [cateringSettings, setCateringSettings] = useState(CATERING_SETTINGS_DEFAULT);
+  const [ingredients, setIngredients] = useState(INITIAL_INGREDIENTS);
+  const [drivers, setDrivers] = useState(INITIAL_DRIVERS);
+  const [reviews, setReviews] = useState(TOP_CUSTOMER_REVIEWS);
 
   // Cart state
   const [cart, setCart] = useState(() => {
@@ -498,6 +504,65 @@ export const AppProvider = ({ children }) => {
     updateOrderStatus(orderId, 'Cancelled');
   };
 
+  // Change priority (Urgent / Normal)
+  const updateOrderPriority = (orderId, newPriority) => {
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, priority: newPriority } : o))
+    );
+    showToast(`Order ${orderId} priority set to ${newPriority}`, 'info');
+  };
+
+  // Set or clear order alert
+  const updateOrderAlert = (orderId, alertText, hasAlert = true) => {
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, alert: alertText, hasAlert } : o))
+    );
+    showToast(`Order ${orderId} alert updated`, 'info');
+  };
+
+  // Assign delivery driver to order
+  const assignDriverToOrder = (orderId, driverName, driverPhone) => {
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? {
+              ...o,
+              assignedDriver: driverName,
+              driverPhone: driverPhone || o.driverPhone,
+              status: o.status === 'Ready' ? 'En Route' : o.status,
+            }
+          : o
+      )
+    );
+    showToast(`Assigned ${driverName} to order ${orderId}`, 'success');
+  };
+
+  // Kitchen ingredient stock adjustments
+  const updateIngredientStock = (ingredientId, deltaAmount) => {
+    setIngredients((prev) =>
+      prev.map((ing) => {
+        if (ing.id === ingredientId) {
+          const nextStock = Math.max(0, ing.currentStock + deltaAmount);
+          const status = nextStock <= ing.minThreshold ? 'Low Stock' : 'Good';
+          return { ...ing, currentStock: nextStock, status };
+        }
+        return ing;
+      })
+    );
+    showToast('Inventory stock updated', 'info');
+  };
+
+  // Add customer review
+  const addReview = (reviewData) => {
+    const newRev = {
+      id: `rev-${Date.now()}`,
+      ...reviewData,
+      date: 'Just now',
+    };
+    setReviews((prev) => [newRev, ...prev]);
+    showToast('Thank you for your review!', 'success');
+  };
+
   // Menu item operations with Backend API
   const addMenuItem = async (itemData) => {
     const payload = {
@@ -738,6 +803,14 @@ export const AppProvider = ({ children }) => {
         orders,
         users,
         cateringSettings,
+        ingredients,
+        drivers,
+        reviews,
+        updateOrderPriority,
+        updateOrderAlert,
+        assignDriverToOrder,
+        updateIngredientStock,
+        addReview,
         cart,
         addToCart,
         updateCartQuantity,

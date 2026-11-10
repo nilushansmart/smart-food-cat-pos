@@ -225,7 +225,7 @@ export const ReceiptModal = () => {
                     {item.quantity}x {item.name}
                   </Typography>
                   <Typography variant="body2" className="tabular-nums" sx={{ fontWeight: 600 }}>
-                    ${(item.price * item.quantity).toFixed(2)}
+                    {cateringSettings.currency || 'Rs. '}{(item.price * item.quantity).toLocaleString()}
                   </Typography>
                 </Box>
                 {item.specialNote && (
@@ -246,15 +246,15 @@ export const ReceiptModal = () => {
                 Subtotal
               </Typography>
               <Typography variant="caption" className="tabular-nums">
-                ${activeReceiptOrder.subtotal.toFixed(2)}
+                {cateringSettings.currency || 'Rs. '}{activeReceiptOrder.subtotal?.toLocaleString()}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                Tax ({(cateringSettings.taxRate * 100).toFixed(0)}%)
+                Tax / SSCL ({(cateringSettings.taxRate * 100).toFixed(0)}%)
               </Typography>
               <Typography variant="caption" className="tabular-nums">
-                ${activeReceiptOrder.tax.toFixed(2)}
+                {cateringSettings.currency || 'Rs. '}{activeReceiptOrder.tax?.toLocaleString()}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 0.5 }}>
@@ -262,7 +262,7 @@ export const ReceiptModal = () => {
                 Total Paid
               </Typography>
               <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#16A34A' }} className="tabular-nums">
-                ${activeReceiptOrder.total.toFixed(2)}
+                {cateringSettings.currency || 'Rs. '}{activeReceiptOrder.total?.toLocaleString()}
               </Typography>
             </Box>
           </Stack>

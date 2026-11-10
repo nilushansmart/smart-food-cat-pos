@@ -22,6 +22,13 @@ import HistoryIcon from '@mui/icons-material/History';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import TimelineIcon from '@mui/icons-material/Timeline';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import PaymentIcon from '@mui/icons-material/Payment';
+import HomeIcon from '@mui/icons-material/Home';
+import InfoIcon from '@mui/icons-material/Info';
+import CalculateIcon from '@mui/icons-material/Calculate';
+import CelebrationIcon from '@mui/icons-material/Celebration';
+import ContactSupportIcon from '@mui/icons-material/ContactSupport';
 import { useApp } from '../../context/AppContext';
 
 export const Sidebar = () => {
@@ -29,7 +36,7 @@ export const Sidebar = () => {
   const theme = useTheme();
 
   const pendingOrdersCount = orders.filter((o) => o.status === 'Pending').length;
-  const preparingOrdersCount = orders.filter((o) => o.status === 'Preparing').length;
+  const preparingOrdersCount = orders.filter((o) => o.status === 'Cooking' || o.status === 'Preparing').length;
   const totalCartCount = cart.reduce((sum, i) => sum + i.quantity, 0);
 
   // Define nav links based on currentUser.role
@@ -37,32 +44,41 @@ export const Sidebar = () => {
     switch (currentUser?.role) {
       case 'Admin':
         return [
-          { id: 'dashboard', label: 'Catering Dashboard', icon: DashboardIcon },
-          { id: 'pos', label: 'Book Order (POS)', icon: PointOfSaleIcon, highlight: true },
-          { id: 'orders', label: 'Catering Bookings', icon: ReceiptLongIcon, badge: pendingOrdersCount },
-          { id: 'daily-income', label: 'Daily Income', icon: TodayIcon },
-          { id: 'monthly-analytics', label: 'Monthly Analytics', icon: BarChartIcon },
+          { id: 'dashboard', label: 'Overview Dashboard', icon: DashboardIcon },
+          { id: 'orders', label: 'Orders & Bookings', icon: ReceiptLongIcon, badge: pendingOrdersCount },
+          { id: 'kitchen-display', label: 'Kitchen KDS & Stock', icon: SoupKitchenIcon, badge: preparingOrdersCount },
+          { id: 'delivery-admin', label: 'Delivery Logistics', icon: LocalShippingIcon },
+          { id: 'payments-admin', label: 'Payments & PayHere', icon: PaymentIcon },
+          { id: 'menu-admin', label: 'Manage Food & Packages', icon: RestaurantMenuIcon },
+          { id: 'customers-admin', label: 'Customers', icon: PeopleIcon },
+          { id: 'monthly-analytics', label: 'Sales Reports', icon: BarChartIcon },
           { divider: true },
-          { id: 'menu', label: 'Catering Menu Catalog', icon: RestaurantMenuIcon },
-          { id: 'users', label: 'User Management', icon: PeopleIcon },
+          { id: 'home', label: 'Customer Storefront', icon: HomeIcon, highlight: true },
           { id: 'settings', label: 'Settings', icon: SettingsIcon },
         ];
       case 'Staff':
         return [
           { id: 'pos', label: 'Book Catering (POS)', icon: PointOfSaleIcon, highlight: true },
           { id: 'orders', label: 'Scheduled Orders', icon: ReceiptLongIcon, badge: pendingOrdersCount },
+          { id: 'delivery-admin', label: 'Delivery Logistics', icon: LocalShippingIcon },
         ];
       case 'Kitchen':
         return [
-          { id: 'kitchen-display', label: 'Live KDS Board', icon: SoupKitchenIcon, badge: pendingOrdersCount + preparingOrdersCount },
-          { id: 'kitchen-history', label: 'Completed Deliveries', icon: HistoryIcon },
+          { id: 'kitchen-display', label: 'Live KDS & Batch Prep', icon: SoupKitchenIcon, badge: pendingOrdersCount + preparingOrdersCount },
+          { id: 'orders', label: 'All Orders Queue', icon: ReceiptLongIcon },
         ];
       case 'Customer':
         return [
-          { id: 'customer-menu', label: 'Online Catering Menu', icon: MenuBookIcon },
-          { id: 'customer-cart', label: 'Booking Cart', icon: ShoppingBagIcon, badge: totalCartCount },
-          { id: 'customer-tracking', label: 'Track Live Booking', icon: TimelineIcon },
-          { id: 'customer-history', label: 'Past Bookings & Receipts', icon: ReceiptLongIcon },
+          { id: 'home', label: 'Home Page', icon: HomeIcon },
+          { id: 'menu', label: 'Food Menu Catalog', icon: MenuBookIcon },
+          { id: 'packages', label: 'Catering Packages', icon: RestaurantMenuIcon },
+          { id: 'custom-order', label: 'Customize Your Order', icon: CalculateIcon, highlight: true },
+          { id: 'events', label: 'Special Events Booking', icon: CelebrationIcon },
+          { id: 'cart', label: 'Shopping Cart', icon: ShoppingBagIcon, badge: totalCartCount },
+          { id: 'tracking', label: 'Live Order Tracking', icon: TimelineIcon },
+          { divider: true },
+          { id: 'about', label: 'About Ceylon Feast', icon: InfoIcon },
+          { id: 'contact', label: 'Contact Us', icon: ContactSupportIcon },
         ];
       default:
         return [];
@@ -79,7 +95,7 @@ export const Sidebar = () => {
         display: { xs: 'none', md: 'block' },
         borderRight: `1px solid ${theme.palette.divider}`,
         backgroundColor: theme.palette.background.paper,
-        minHeight: 'calc(100vh - 64px)',
+        minHeight: 'calc(100vh - 68px)',
         py: 2.5,
         px: 1.5,
       }}
@@ -88,13 +104,14 @@ export const Sidebar = () => {
         <Typography
           variant="caption"
           sx={{
-            fontWeight: 700,
+            fontWeight: 800,
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
             color: theme.palette.text.secondary,
+            fontSize: '0.72rem',
           }}
         >
-          {currentUser?.role} Navigation
+          {currentUser?.role === 'Customer' ? 'Storefront Navigation' : `${currentUser?.role} Operations`}
         </Typography>
       </Box>
 
@@ -113,11 +130,11 @@ export const Sidebar = () => {
               selected={isSelected}
               onClick={() => setCurrentScreen(item.id)}
               sx={{
-                borderRadius: 3,
+                borderRadius: '14px',
                 mb: 0.8,
-                py: 1.2,
+                py: 1.1,
                 px: 2,
-                transition: 'all 0.2s ease',
+                transition: 'all 0.15s ease',
                 ...(isSelected && {
                   backgroundColor: '#F97316 !important',
                   color: '#FFFFFF !important',
@@ -157,7 +174,7 @@ export const Sidebar = () => {
               <ListItemText
                 primary={item.label}
                 primaryTypographyProps={{
-                  fontSize: '0.9rem',
+                  fontSize: '0.88rem',
                   fontWeight: isSelected ? 700 : 500,
                 }}
               />
@@ -168,7 +185,7 @@ export const Sidebar = () => {
                   sx={{
                     height: 20,
                     minWidth: 20,
-                    fontSize: '0.75rem',
+                    fontSize: '0.72rem',
                     fontWeight: 700,
                     backgroundColor: isSelected ? '#FFFFFF' : '#F97316',
                     color: isSelected ? '#F97316' : '#FFFFFF',

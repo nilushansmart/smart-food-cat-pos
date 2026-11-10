@@ -37,7 +37,7 @@ export const CartContent = ({ onCloseMobile }) => {
   const theme = useTheme();
 
   const [customerName, setCustomerName] = useState('');
-  const [countryCode, setCountryCode] = useState('+1');
+  const [countryCode, setCountryCode] = useState('+94');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [orderType, setOrderType] = useState('Online Delivery');
   const [eventDate, setEventDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -194,7 +194,7 @@ export const CartContent = ({ onCloseMobile }) => {
                     sx={{ color: theme.palette.text.secondary }}
                     className="tabular-nums"
                   >
-                    ${item.price.toFixed(2)} each
+                    {cateringSettings.currency || 'Rs. '}{item.price.toLocaleString()} each
                   </Typography>
                 </Box>
                 <Typography
@@ -202,7 +202,7 @@ export const CartContent = ({ onCloseMobile }) => {
                   sx={{ fontWeight: 700, color: '#F97316' }}
                   className="tabular-nums"
                 >
-                  ${(item.price * item.quantity).toFixed(2)}
+                  {cateringSettings.currency || 'Rs. '}{(item.price * item.quantity).toLocaleString()}
                 </Typography>
               </Box>
 
@@ -425,7 +425,7 @@ export const CartContent = ({ onCloseMobile }) => {
                 Subtotal
               </Typography>
               <Typography variant="body2" className="tabular-nums" sx={{ fontWeight: 600 }}>
-                ${subtotal.toFixed(2)}
+                {cateringSettings.currency || 'Rs. '}{subtotal.toLocaleString()}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -433,7 +433,7 @@ export const CartContent = ({ onCloseMobile }) => {
                 Tax ({(cateringSettings.taxRate * 100).toFixed(0)}%)
               </Typography>
               <Typography variant="body2" className="tabular-nums">
-                ${tax.toFixed(2)}
+                {cateringSettings.currency || 'Rs. '}{tax.toLocaleString()}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 0.5 }}>
@@ -441,7 +441,7 @@ export const CartContent = ({ onCloseMobile }) => {
                 Total
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 800, color: '#F97316' }}>
-                <NumberCounter value={total} prefix="$" />
+                <NumberCounter value={total} prefix={cateringSettings.currency || 'Rs. '} />
               </Typography>
             </Box>
           </Stack>
