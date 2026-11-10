@@ -11,7 +11,8 @@ import java.time.LocalDate;
 public interface ReportService {
 
     /**
-     * Aggregates completed orders, income, cash vs online metrics for a selected date.
+     * Aggregates completed orders, income, cash vs online metrics for a selected
+     * date.
      */
     DailyIncomeReportResponse getDailyIncomeReport(LocalDate date);
 
@@ -20,4 +21,3 @@ public interface ReportService {
      */
     MonthlyAnalyticsResponse getMonthlyAnalytics(int year, int month);
 }
-
