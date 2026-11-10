@@ -23,7 +23,7 @@ import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import { useApp } from '../../context/AppContext';
 
 export const LoginScreen = ({ onLoginSuccess }) => {
-  const { cateringSettings, users, switchRole } = useApp();
+  const { cateringSettings, login, switchRole, loading } = useApp();
   const theme = useTheme();
 
   const [username, setUsername] = useState('admin');
@@ -31,25 +31,20 @@ export const LoginScreen = ({ onLoginSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e?.preventDefault();
     setError('');
 
-    const matchedUser = users.find(
-      (u) => u.username.toLowerCase() === username.trim().toLowerCase()
-    );
+    if (!username.trim() || !password) {
+      setError('Please provide both username and password.');
+      return;
+    }
 
-    if (matchedUser) {
-      if (matchedUser.status === 'Inactive') {
-        setError('This account is deactivated. Please contact administrator.');
-        return;
-      }
-      switchRole(matchedUser.role);
+    const res = await login(username.trim(), password);
+    if (res?.success) {
       if (onLoginSuccess) onLoginSuccess();
     } else {
-      // Default to demo admin if credentials arbitrary
-      switchRole('Admin');
-      if (onLoginSuccess) onLoginSuccess();
+      setError(res?.error || 'Invalid username or password');
     }
   };
 
@@ -148,6 +143,7 @@ export const LoginScreen = ({ onLoginSuccess }) => {
                 type="submit"
                 variant="contained"
                 fullWidth
+                disabled={loading}
                 sx={{
                   minHeight: 50,
                   fontSize: '1rem',
@@ -156,7 +152,7 @@ export const LoginScreen = ({ onLoginSuccess }) => {
                   '&:hover': { backgroundColor: '#EA580C' },
                 }}
               >
-                Sign In to System
+                {loading ? 'Signing In...' : 'Sign In to System'}
               </Button>
             </Stack>
           </form>

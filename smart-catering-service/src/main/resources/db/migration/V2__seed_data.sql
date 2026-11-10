@@ -2,12 +2,12 @@
 -- Seed initial roles, users, categories, and catering menu items
 
 -- Passwords are all hashed with BCrypt for 'password123':
--- $2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.AQubh4a
+-- $2a$10$odJVbEQyd7M0VF.kumExkezEvvh.g5n9E9f/NccfrhGAn/0/Sxb/q
 INSERT INTO users (username, email, password_hash, full_name, phone, role, active, branch_id) VALUES
-('admin', 'admin@stitchcatering.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.AQubh4a', 'Vikram Sethi (Admin)', '+15550192831', 'ROLE_ADMIN', TRUE, 'MAIN'),
-('staff', 'staff@stitchcatering.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.AQubh4a', 'Maya Jayasinghe (Staff)', '+15558291920', 'ROLE_STAFF', TRUE, 'MAIN'),
-('kitchen', 'kitchen@stitchcatering.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.AQubh4a', 'Chef Anura & Kitchen Crew', '+15554412900', 'ROLE_KITCHEN', TRUE, 'MAIN'),
-('customer', 'customer@gmail.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.AQubh4a', 'Kavindu Customer', '+15559021823', 'ROLE_CUSTOMER', TRUE, 'MAIN');
+('admin', 'admin@stitchcatering.com', '$2a$10$odJVbEQyd7M0VF.kumExkezEvvh.g5n9E9f/NccfrhGAn/0/Sxb/q', 'Vikram Sethi (Admin)', '+15550192831', 'ROLE_ADMIN', TRUE, 'MAIN'),
+('staff', 'staff@stitchcatering.com', '$2a$10$odJVbEQyd7M0VF.kumExkezEvvh.g5n9E9f/NccfrhGAn/0/Sxb/q', 'Maya Jayasinghe (Staff)', '+15558291920', 'ROLE_STAFF', TRUE, 'MAIN'),
+('kitchen', 'kitchen@stitchcatering.com', '$2a$10$odJVbEQyd7M0VF.kumExkezEvvh.g5n9E9f/NccfrhGAn/0/Sxb/q', 'Chef Anura & Kitchen Crew', '+15554412900', 'ROLE_KITCHEN', TRUE, 'MAIN'),
+('customer', 'customer@gmail.com', '$2a$10$odJVbEQyd7M0VF.kumExkezEvvh.g5n9E9f/NccfrhGAn/0/Sxb/q', 'Kavindu Customer', '+15559021823', 'ROLE_CUSTOMER', TRUE, 'MAIN');
 
 -- Insert Categories
 INSERT INTO categories (id, name, description, display_order, active) VALUES

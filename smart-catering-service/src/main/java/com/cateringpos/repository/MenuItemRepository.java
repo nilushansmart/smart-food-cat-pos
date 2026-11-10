@@ -18,10 +18,9 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, Long> {
     List<MenuItem> findByCategoryIdAndAvailableTrue(Long categoryId);
 
     @Query("SELECT m FROM MenuItem m WHERE m.available = true AND " +
-           "(LOWER(m.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-           "LOWER(m.description) LIKE LOWER(CONCAT('%', :query, '%')))")
+            "(LOWER(m.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(m.description) LIKE LOWER(CONCAT('%', :query, '%')))")
     List<MenuItem> searchAvailable(@Param("query") String query);
 
     Page<MenuItem> findByCategoryId(Long categoryId, Pageable pageable);
 }
-

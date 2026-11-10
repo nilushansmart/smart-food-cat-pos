@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import {
   INITIAL_MENU_ITEMS,
@@ -8,8 +8,55 @@ import {
   INITIAL_CATEGORIES,
 } from '../data/mockData';
 import { sound } from '../utils/audio';
+import {
+  authApi,
+  categoriesApi,
+  menuItemsApi,
+  ordersApi,
+  usersApi,
+} from '../api';
 
 const AppContext = createContext();
+
+// Helper to normalize backend status (e.g., 'PREPARING' -> 'Preparing')
+const formatStatus = (status) => {
+  if (!status) return 'Pending';
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+};
+
+// Helper to normalize backend order to frontend UI model
+const normalizeOrder = (backendOrder) => {
+  if (!backendOrder) return null;
+  return {
+    id: backendOrder.orderNumber || backendOrder.id,
+    numericId: backendOrder.id,
+    customerName: backendOrder.customerName || 'Online Customer',
+    customerPhone: backendOrder.customerPhone || '',
+    orderType: backendOrder.orderType === 'SCHEDULED_PICKUP' ? 'Scheduled Pickup' : 'Online Delivery',
+    eventDate: backendOrder.eventDate || '',
+    eventTime: backendOrder.eventTime || '',
+    eventType: backendOrder.eventType || 'Catering Gathering',
+    guestCount: backendOrder.guestCount || '10-15 Guests',
+    deliveryAddress: backendOrder.deliveryAddress || '',
+    deliveryDistanceKm: backendOrder.deliveryDistanceKm || null,
+    estimatedDeliveryTime: backendOrder.estimatedDeliveryTime || '',
+    notes: backendOrder.notes || '',
+    subtotal: Number(backendOrder.subtotal) || 0,
+    tax: Number(backendOrder.taxAmount) || 0,
+    total: Number(backendOrder.totalAmount) || 0,
+    status: formatStatus(backendOrder.status),
+    paymentStatus: formatStatus(backendOrder.paymentStatus),
+    createdAt: backendOrder.createdAt || new Date().toISOString(),
+    completedAt: backendOrder.completedAt || null,
+    items: (backendOrder.items || []).map((i) => ({
+      id: i.menuItemId || i.id,
+      name: i.itemName || i.name,
+      price: Number(i.unitPrice || i.price) || 0,
+      quantity: i.quantity,
+      specialNote: i.specialNote || '',
+    })),
+  };
+};
 
 export const AppProvider = ({ children }) => {
   // Theme state
@@ -33,26 +80,12 @@ export const AppProvider = ({ children }) => {
     return 'dashboard';
   });
 
-  // Persistent data state
-  const [menuItems, setMenuItems] = useState(() => {
-    const saved = localStorage.getItem('stitch_menu_items');
-    return saved ? JSON.parse(saved) : INITIAL_MENU_ITEMS;
-  });
-
-  const [orders, setOrders] = useState(() => {
-    const saved = localStorage.getItem('stitch_orders');
-    return saved ? JSON.parse(saved) : INITIAL_ORDERS;
-  });
-
-  const [users, setUsers] = useState(() => {
-    const saved = localStorage.getItem('stitch_users');
-    return saved ? JSON.parse(saved) : INITIAL_USERS;
-  });
-
-  const [cateringSettings, setCateringSettings] = useState(() => {
-    const saved = localStorage.getItem('stitch_catering_settings');
-    return saved ? JSON.parse(saved) : CATERING_SETTINGS_DEFAULT;
-  });
+  // Data states
+  const [categories, setCategories] = useState(INITIAL_CATEGORIES);
+  const [menuItems, setMenuItems] = useState(INITIAL_MENU_ITEMS);
+  const [orders, setOrders] = useState(INITIAL_ORDERS);
+  const [users, setUsers] = useState(INITIAL_USERS);
+  const [cateringSettings, setCateringSettings] = useState(CATERING_SETTINGS_DEFAULT);
 
   // Cart state
   const [cart, setCart] = useState(() => {
@@ -66,6 +99,9 @@ export const AppProvider = ({ children }) => {
 
   // Audio / notification toggle
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Loading indicator for API calls
+  const [loading, setLoading] = useState(false);
 
   // Toast / feedback state
   const [toast, setToast] = useState({
@@ -84,22 +120,6 @@ export const AppProvider = ({ children }) => {
   }, [currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('stitch_menu_items', JSON.stringify(menuItems));
-  }, [menuItems]);
-
-  useEffect(() => {
-    localStorage.setItem('stitch_orders', JSON.stringify(orders));
-  }, [orders]);
-
-  useEffect(() => {
-    localStorage.setItem('stitch_users', JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
-    localStorage.setItem('stitch_catering_settings', JSON.stringify(cateringSettings));
-  }, [cateringSettings]);
-
-  useEffect(() => {
     localStorage.setItem('stitch_cart', JSON.stringify(cart));
   }, [cart]);
 
@@ -116,22 +136,196 @@ export const AppProvider = ({ children }) => {
     setDarkMode((prev) => !prev);
   };
 
-  // Switch role and navigate to appropriate default view
-  const switchRole = (roleName) => {
-    const targetUser = users.find((u) => u.role === roleName) || {
-      id: `u-${Date.now()}`,
-      name: `${roleName} User`,
-      role: roleName,
-      status: 'Active',
+  // Sync data from Backend APIs
+  const refreshBackendData = useCallback(async () => {
+    try {
+      const catRes = await categoriesApi.getAll();
+      if (catRes?.data && Array.isArray(catRes.data) && catRes.data.length > 0) {
+        setCategories(catRes.data);
+      }
+
+      const menuRes = await menuItemsApi.getAll();
+      if (menuRes?.data && Array.isArray(menuRes.data) && menuRes.data.length > 0) {
+        setMenuItems(
+          menuRes.data.map((item) => ({
+            id: item.id,
+            name: item.name,
+            category: item.categoryName || 'Catering Trays',
+            categoryId: item.categoryId,
+            price: Number(item.price),
+            description: item.description,
+            imageUrl: item.imageUrl,
+            image: item.imageUrl,
+            prepTimeMinutes: item.prepTimeMinutes || 15,
+            pax: item.pax || 'Group Tray',
+            available: item.available,
+          }))
+        );
+      }
+
+      const ordersRes = await ordersApi.getAll();
+      const rawOrders = ordersRes?.data?.content || ordersRes?.data;
+      if (rawOrders && Array.isArray(rawOrders) && rawOrders.length > 0) {
+        setOrders(rawOrders.map(normalizeOrder));
+      }
+
+      const token = localStorage.getItem('stitch_token');
+      if (token) {
+        try {
+          const userRes = await usersApi.getAll();
+          if (userRes?.data && Array.isArray(userRes.data)) {
+            setUsers(
+              userRes.data.map((u) => ({
+                id: u.id,
+                name: u.fullName,
+                username: u.username,
+                email: u.email,
+                phone: u.phone,
+                role: formatStatus(u.role?.replace('ROLE_', '')),
+                status: u.active ? 'Active' : 'Inactive',
+                avatar: `https://images.unsplash.com/photo-${1535713875002 + u.id}?w=120&auto=format&fit=crop&q=80`,
+              }))
+            );
+          }
+        } catch {
+          // ignore
+        }
+      }
+    } catch {
+      // Fallback to initial mock data if backend not reachable
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadInitialData = async () => {
+      try {
+        const catRes = await categoriesApi.getAll();
+        if (active && catRes?.data && Array.isArray(catRes.data) && catRes.data.length > 0) {
+          setCategories(catRes.data);
+        }
+
+        const menuRes = await menuItemsApi.getAll();
+        if (active && menuRes?.data && Array.isArray(menuRes.data) && menuRes.data.length > 0) {
+          setMenuItems(
+            menuRes.data.map((item) => ({
+              id: item.id,
+              name: item.name,
+              category: item.categoryName || 'Catering Trays',
+              categoryId: item.categoryId,
+              price: Number(item.price),
+              description: item.description,
+              imageUrl: item.imageUrl,
+              image: item.imageUrl,
+              prepTimeMinutes: item.prepTimeMinutes || 15,
+              pax: item.pax || 'Group Tray',
+              available: item.available,
+            }))
+          );
+        }
+
+        const ordersRes = await ordersApi.getAll();
+        const rawOrders = ordersRes?.data?.content || ordersRes?.data;
+        if (active && rawOrders && Array.isArray(rawOrders) && rawOrders.length > 0) {
+          setOrders(rawOrders.map(normalizeOrder));
+        }
+      } catch {
+        // Fallback
+      }
     };
-    setCurrentUser(targetUser);
+
+    loadInitialData();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Login via Backend API
+  const login = async (username, password) => {
+    setLoading(true);
+    try {
+      const res = await authApi.login({ username, password });
+      if (res?.data) {
+        const authData = res.data;
+        const token = authData.accessToken || authData.token;
+        localStorage.setItem('stitch_token', token);
+
+        const role = formatStatus((authData.role || authData.user?.role)?.replace('ROLE_', ''));
+        const userObj = {
+          id: authData.userId || authData.user?.id,
+          username: authData.username || authData.user?.username,
+          name: authData.fullName || authData.user?.fullName,
+          email: authData.email || authData.user?.email,
+          phone: authData.phone || authData.user?.phone,
+          role,
+          token,
+        };
+
+        setCurrentUser(userObj);
+        localStorage.setItem('stitch_current_user', JSON.stringify(userObj));
+
+        // Navigate based on role
+        if (role === 'Admin') setCurrentScreen('dashboard');
+        else if (role === 'Staff') setCurrentScreen('pos');
+        else if (role === 'Kitchen') setCurrentScreen('kitchen-display');
+        else if (role === 'Customer') setCurrentScreen('customer-menu');
+
+        showToast(`Welcome back, ${userObj.name}!`, 'success');
+        refreshBackendData();
+        return { success: true, user: userObj };
+      }
+    } catch (err) {
+      showToast(err.message || 'Login failed. Please check credentials.', 'error');
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Switch role locally (quick demo switcher)
+  const switchRole = async (roleName) => {
+    // Try logging in with the predefined accounts on the backend first
+    const roleUsernames = {
+      Admin: 'admin',
+      Staff: 'staff',
+      Kitchen: 'kitchen',
+      Customer: 'customer',
+    };
+
+    const username = roleUsernames[roleName] || roleName.toLowerCase();
+    try {
+      const res = await authApi.login({ username, password: 'password123' });
+      if (res?.data) {
+        const token = res.data.accessToken || res.data.token;
+        localStorage.setItem('stitch_token', token);
+        const userObj = {
+          id: res.data.userId || res.data.user?.id,
+          username: res.data.username,
+          name: res.data.fullName || res.data.user?.fullName,
+          role: roleName,
+          token,
+        };
+        setCurrentUser(userObj);
+      }
+    } catch {
+      // Local fallback
+      const targetUser = users.find((u) => u.role === roleName) || {
+        id: `u-${Date.now()}`,
+        name: `${roleName} User`,
+        role: roleName,
+        status: 'Active',
+      };
+      setCurrentUser(targetUser);
+    }
 
     if (roleName === 'Admin') setCurrentScreen('dashboard');
     else if (roleName === 'Staff') setCurrentScreen('pos');
     else if (roleName === 'Kitchen') setCurrentScreen('kitchen-display');
     else if (roleName === 'Customer') setCurrentScreen('customer-menu');
 
-    showToast(`Switched view to ${roleName}`, 'info');
+    showToast(`Switched active view to ${roleName}`, 'info');
   };
 
   // Cart operations
@@ -187,8 +381,8 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Create & Place Catering Booking / Order
-  const createOrder = ({
+  // Create & Place Catering Booking / Order with Backend Integration
+  const createOrder = async ({
     customerPhone = '',
     customerName = '',
     orderType = 'Online Delivery',
@@ -206,57 +400,77 @@ export const AppProvider = ({ children }) => {
       return null;
     }
 
-    const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const tax = subtotal * (cateringSettings.taxRate || 0.05);
-    const total = subtotal + tax;
-
-    // Generate Booking / Order ID (e.g. ORD-1083)
-    const nextNum = 1083 + orders.length;
-    const newOrder = {
-      id: `ORD-${nextNum}`,
-      customerName: customerName || (currentUser?.role === 'Customer' ? currentUser.name : 'Online Customer'),
+    const payload = {
+      customerName: customerName || (currentUser?.role === 'Customer' ? currentUser.name : 'Valued Customer'),
       customerPhone: customerPhone || '+1 (555) 000-0000',
-      orderType: orderType || 'Online Delivery',
+      orderType: orderType === 'Scheduled Pickup' ? 'SCHEDULED_PICKUP' : 'ONLINE_DELIVERY',
       eventDate: eventDate || new Date().toISOString().split('T')[0],
       eventTime: eventTime || '12:30 PM (Lunch)',
       eventType: eventType || 'Catering Gathering',
       guestCount: guestCount || '10-15 Guests',
-      deliveryAddress: deliveryAddress || 'Delivery Address Provided',
+      deliveryAddress: deliveryAddress || 'Address on file',
+      paymentMethod: 'CASH_ON_DELIVERY',
       notes: notes || '',
-      items: orderItems.map((i) => ({
-        id: i.id,
-        name: i.name,
-        price: i.price,
-        quantity: i.quantity,
-        specialNote: i.specialNote || '',
+      items: orderItems.map((item) => ({
+        menuItemId: Number(item.id) || 1,
+        quantity: item.quantity,
+        specialNote: item.specialNote || '',
       })),
-      subtotal,
-      tax,
-      total,
-      status: 'Pending',
-      createdAt: new Date().toISOString(),
-      creatorRole: currentUser.role,
     };
 
-    setOrders((prev) => [newOrder, ...prev]);
-    clearCart();
+    let createdOrder = null;
 
-    // Celebration & Audio
-    fireConfetti();
-    if (soundEnabled) {
-      sound.playSuccessChime();
+    try {
+      const res = await ordersApi.create(payload);
+      if (res?.data) {
+        createdOrder = normalizeOrder(res.data);
+      }
+    } catch {
+      // Local fallback calculation if backend unavailable
+      const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const tax = subtotal * (cateringSettings.taxRate || 0.05);
+      const total = subtotal + tax;
+      createdOrder = {
+        id: `ORD-${1083 + orders.length}`,
+        ...payload,
+        items: orderItems,
+        subtotal,
+        tax,
+        total,
+        status: 'Pending',
+        createdAt: new Date().toISOString(),
+      };
     }
 
-    // Open receipt preview modal
-    setActiveReceiptOrder(newOrder);
-    setIsReceiptOpen(true);
-    showToast(`Catering Booking #${newOrder.id} placed successfully!`, 'success');
+    if (createdOrder) {
+      setOrders((prev) => [createdOrder, ...prev]);
+      clearCart();
+      fireConfetti();
+      if (soundEnabled) {
+        sound.playSuccessChime();
+      }
+      setActiveReceiptOrder(createdOrder);
+      setIsReceiptOpen(true);
+      showToast(`Catering Booking #${createdOrder.id} placed successfully!`, 'success');
+    }
 
-    return newOrder;
+    return createdOrder;
   };
 
-  // Update order status (Kanban & List)
-  const updateOrderStatus = (orderId, newStatus) => {
+  // Update order status (Syncs with /api/orders/{id}/status)
+  const updateOrderStatus = async (orderId, newStatus) => {
+    const statusUpper = newStatus.toUpperCase();
+
+    // Find numeric ID if available
+    const existing = orders.find((o) => o.id === orderId);
+    const targetId = existing?.numericId || orderId;
+
+    try {
+      await ordersApi.updateStatus(targetId, statusUpper);
+    } catch {
+      // Proceed locally
+    }
+
     setOrders((prev) =>
       prev.map((ord) => {
         if (ord.id === orderId) {
@@ -284,63 +498,205 @@ export const AppProvider = ({ children }) => {
     updateOrderStatus(orderId, 'Cancelled');
   };
 
-  // Menu item operations
-  const addMenuItem = (itemData) => {
-    const newItem = {
+  // Menu item operations with Backend API
+  const addMenuItem = async (itemData) => {
+    const payload = {
+      name: itemData.name,
+      categoryId: Number(itemData.categoryId) || 1,
+      price: parseFloat(itemData.price) || 10.0,
+      description: itemData.description || '',
+      imageUrl: itemData.image || itemData.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500',
+      prepTimeMinutes: Number(itemData.prepTimeMinutes) || 15,
+      pax: itemData.pax || 'Group Portion',
+      available: true,
+      branchId: 'MAIN',
+    };
+
+    try {
+      const res = await menuItemsApi.create(payload);
+      if (res?.data) {
+        const newItem = {
+          id: res.data.id,
+          name: res.data.name,
+          category: res.data.categoryName || 'Catering Trays',
+          categoryId: res.data.categoryId,
+          price: Number(res.data.price),
+          description: res.data.description,
+          imageUrl: res.data.imageUrl,
+          image: res.data.imageUrl,
+          prepTimeMinutes: res.data.prepTimeMinutes,
+          pax: res.data.pax,
+          available: res.data.available,
+        };
+        setMenuItems((prev) => [newItem, ...prev]);
+        showToast(`Added ${newItem.name} to menu`, 'success');
+        return;
+      }
+    } catch {
+      // Local fallback
+    }
+
+    const fallbackItem = {
       ...itemData,
-      id: `m-${Date.now()}`,
+      id: Date.now(),
       available: true,
       price: parseFloat(itemData.price) || 0,
     };
-    setMenuItems((prev) => [newItem, ...prev]);
-    showToast(`Added ${newItem.name} to menu`, 'success');
+    setMenuItems((prev) => [fallbackItem, ...prev]);
+    showToast(`Added ${fallbackItem.name} to menu`, 'success');
   };
 
-  const updateMenuItem = (updatedItem) => {
+  const updateMenuItem = async (updatedItem) => {
+    const payload = {
+      name: updatedItem.name,
+      categoryId: Number(updatedItem.categoryId) || 1,
+      price: parseFloat(updatedItem.price) || 10.0,
+      description: updatedItem.description || '',
+      imageUrl: updatedItem.image || updatedItem.imageUrl || '',
+      prepTimeMinutes: Number(updatedItem.prepTimeMinutes) || 15,
+      pax: updatedItem.pax || 'Group Portion',
+      available: updatedItem.available !== undefined ? updatedItem.available : true,
+      branchId: 'MAIN',
+    };
+
+    try {
+      if (typeof updatedItem.id === 'number') {
+        await menuItemsApi.update(updatedItem.id, payload);
+      }
+    } catch {
+      // Local fallback
+    }
+
     setMenuItems((prev) =>
       prev.map((item) => (item.id === updatedItem.id ? { ...updatedItem, price: parseFloat(updatedItem.price) } : item))
     );
     showToast(`Updated ${updatedItem.name}`, 'success');
   };
 
-  const toggleItemAvailability = (itemId) => {
+  const toggleItemAvailability = async (itemId) => {
+    try {
+      if (typeof itemId === 'number') {
+        await menuItemsApi.toggleAvailability(itemId);
+      }
+    } catch {
+      // Local fallback
+    }
+
     setMenuItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, available: !item.available } : item
-      )
+      prev.map((item) => (item.id === itemId ? { ...item, available: !item.available } : item))
     );
   };
 
-  const deleteMenuItem = (itemId) => {
+  const deleteMenuItem = async (itemId) => {
+    try {
+      if (typeof itemId === 'number') {
+        await menuItemsApi.delete(itemId);
+      }
+    } catch {
+      // Local fallback
+    }
+
     setMenuItems((prev) => prev.filter((item) => item.id !== itemId));
     showToast('Menu item removed', 'info');
   };
 
-  // User management
-  const addUser = (userData) => {
-    const newUser = {
-      ...userData,
-      id: `u-${Date.now()}`,
-      status: 'Active',
-      avatar: userData.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+  // User management with Backend API
+  const addUser = async (userData) => {
+    const payload = {
+      username: userData.username || `user_${Date.now()}`,
+      email: userData.email || `${userData.username || 'user'}@stitchcatering.com`,
+      password: userData.password || 'password123',
+      fullName: userData.name || userData.fullName,
+      phone: userData.phone || '+1555000000',
+      role: `ROLE_${(userData.role || 'Staff').toUpperCase()}`,
+      branchId: 'MAIN',
     };
-    setUsers((prev) => [...prev, newUser]);
-    showToast(`Created user account for ${newUser.name}`, 'success');
+
+    try {
+      const res = await usersApi.create(payload);
+      if (res?.data) {
+        const u = res.data;
+        const newUser = {
+          id: u.id,
+          name: u.fullName,
+          username: u.username,
+          email: u.email,
+          phone: u.phone,
+          role: formatStatus(u.role?.replace('ROLE_', '')),
+          status: u.active ? 'Active' : 'Inactive',
+          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+        };
+        setUsers((prev) => [...prev, newUser]);
+        showToast(`Created user account for ${newUser.name}`, 'success');
+        return;
+      }
+    } catch (err) {
+      showToast(err.message || 'Error creating user on server', 'error');
+    }
+
+    // Fallback
+    const fallbackUser = {
+      ...userData,
+      id: Date.now(),
+      status: 'Active',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+    };
+    setUsers((prev) => [...prev, fallbackUser]);
+    showToast(`Created user account for ${fallbackUser.name}`, 'success');
   };
 
-  const updateUser = (userData) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userData.id ? { ...u, ...userData } : u))
-    );
+  const updateUser = async (userData) => {
+    const payload = {
+      email: userData.email || `${userData.username}@stitchcatering.com`,
+      fullName: userData.name || userData.fullName,
+      phone: userData.phone || '',
+      role: `ROLE_${(userData.role || 'Staff').toUpperCase()}`,
+      active: userData.status === 'Active',
+      branchId: 'MAIN',
+    };
+
+    try {
+      if (typeof userData.id === 'number') {
+        await usersApi.update(userData.id, payload);
+      }
+    } catch {
+      // Local fallback
+    }
+
+    setUsers((prev) => prev.map((u) => (u.id === userData.id ? { ...u, ...userData } : u)));
     showToast(`Updated user ${userData.name}`, 'success');
   };
 
-  const toggleUserStatus = (userId) => {
+  const toggleUserStatus = async (userId) => {
+    try {
+      if (typeof userId === 'number') {
+        await usersApi.toggleActive(userId);
+      }
+    } catch {
+      // Local fallback
+    }
+
     setUsers((prev) =>
-      prev.map((u) =>
-        u.id === userId ? { ...u, status: u.status === 'Active' ? 'Inactive' : 'Active' } : u
-      )
+      prev.map((u) => (u.id === userId ? { ...u, status: u.status === 'Active' ? 'Inactive' : 'Active' } : u))
     );
+  };
+
+  // WhatsApp receipt sharing using Backend Signed Token URL
+  const prepareWhatsAppShare = async (orderId) => {
+    const order = orders.find((o) => o.id === orderId);
+    const numericId = order?.numericId || orderId;
+
+    try {
+      if (typeof numericId === 'number') {
+        const res = await ordersApi.sendReceipt(numericId);
+        if (res?.data?.shareUrl) {
+          return res.data.shareUrl;
+        }
+      }
+    } catch {
+      // Fallback to local formatter
+    }
+    return null;
   };
 
   // Settings
@@ -349,15 +705,12 @@ export const AppProvider = ({ children }) => {
     showToast('Settings saved successfully', 'success');
   };
 
-  // Reset to default mock data
+  // Reset demo records
   const resetToMockData = () => {
-    localStorage.clear();
-    setMenuItems(INITIAL_MENU_ITEMS);
-    setOrders(INITIAL_ORDERS);
-    setUsers(INITIAL_USERS);
-    setCateringSettings(CATERING_SETTINGS_DEFAULT);
+    localStorage.removeItem('stitch_cart');
     setCart([]);
-    showToast('System data reset to default demo records', 'info');
+    refreshBackendData();
+    showToast('Refreshed data from backend database', 'info');
   };
 
   const openReceiptModal = (order) => {
@@ -378,9 +731,10 @@ export const AppProvider = ({ children }) => {
         setCurrentUser,
         currentScreen,
         setCurrentScreen,
+        login,
         switchRole,
         menuItems,
-        categories: INITIAL_CATEGORIES,
+        categories,
         orders,
         users,
         cateringSettings,
@@ -401,12 +755,15 @@ export const AppProvider = ({ children }) => {
         toggleUserStatus,
         updateSettings,
         resetToMockData,
+        refreshBackendData,
         activeReceiptOrder,
         isReceiptOpen,
         openReceiptModal,
         closeReceiptModal,
+        prepareWhatsAppShare,
         soundEnabled,
         setSoundEnabled,
+        loading,
         toast,
         showToast,
         closeToast,

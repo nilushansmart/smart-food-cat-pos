@@ -28,18 +28,33 @@ export const ReceiptModal = () => {
     cateringSettings,
     setCurrentScreen,
     currentUser,
+    prepareWhatsAppShare,
   } = useApp();
 
   const theme = useTheme();
 
   if (!activeReceiptOrder) return null;
 
-  const handleWhatsAppShare = () => {
+  const handleWhatsAppShare = async () => {
+    try {
+      const serverUrl = await prepareWhatsAppShare(activeReceiptOrder.id);
+      if (serverUrl) {
+        window.open(serverUrl, '_blank');
+        return;
+      }
+    } catch {
+      // ignore
+    }
     const url = formatWhatsAppReceipt(activeReceiptOrder, cateringSettings);
     window.open(url, '_blank');
   };
 
   const handleDownloadPdf = () => {
+    const id = activeReceiptOrder.numericId || activeReceiptOrder.id;
+    if (typeof id === 'number') {
+      window.open(`/api/receipts/${id}/download`, '_blank');
+      return;
+    }
     generatePdfReceipt(activeReceiptOrder, cateringSettings);
   };
 

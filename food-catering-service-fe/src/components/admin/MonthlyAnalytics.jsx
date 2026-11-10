@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -23,12 +23,37 @@ import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import PieChartIcon from '@mui/icons-material/PieChart';
 import StarIcon from '@mui/icons-material/Star';
 import { NumberCounter } from '../common/NumberCounter';
+import { reportsApi } from '../../api';
 
 export const MonthlyAnalytics = () => {
   const theme = useTheme();
 
   const [selectedMonth, setSelectedMonth] = useState('2026-11');
   const [hoveredWeek, setHoveredWeek] = useState(null);
+  const [serverAnalytics, setServerAnalytics] = useState(null);
+
+  // Sync with backend /api/reports/monthly
+  useEffect(() => {
+    let isMounted = true;
+    const parts = selectedMonth.split('-');
+    const year = Number(parts[0]) || 2026;
+    const month = Number(parts[1]) || 11;
+
+    reportsApi
+      .getMonthlyAnalytics(year, month)
+      .then((res) => {
+        if (isMounted && res?.data) {
+          setServerAnalytics(res.data);
+        }
+      })
+      .catch(() => {
+        // Fallback to local
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedMonth]);
 
   // Weekly income distribution data
   const weeklyData = [
@@ -39,25 +64,52 @@ export const MonthlyAnalytics = () => {
   ];
 
   const maxWeeklyRevenue = Math.max(...weeklyData.map((w) => w.revenue));
-  const totalMonthlyIncome = weeklyData.reduce((sum, w) => sum + w.revenue, 0);
-  const totalMonthlyOrders = weeklyData.reduce((sum, w) => sum + w.orders, 0);
+  const totalMonthlyIncome = serverAnalytics?.totalMonthlyIncome !== undefined && serverAnalytics.totalMonthlyIncome > 0
+    ? Number(serverAnalytics.totalMonthlyIncome)
+    : weeklyData.reduce((sum, w) => sum + w.revenue, 0);
+
+  const totalMonthlyOrders = serverAnalytics?.totalMonthlyOrders !== undefined && serverAnalytics.totalMonthlyOrders > 0
+    ? Number(serverAnalytics.totalMonthlyOrders)
+    : weeklyData.reduce((sum, w) => sum + w.orders, 0);
 
   // Category breakdown calculation
-  const categoryStats = [
+  const defaultCategoryStats = [
     { name: 'Rice Dishes', orders: 248, percentage: 42, revenue: 6320.50, color: '#F97316' },
     { name: 'Snacks & Starters', orders: 165, percentage: 28, revenue: 4210.00, color: '#3B82F6' },
     { name: 'Desserts', orders: 106, percentage: 18, revenue: 2709.00, color: '#16A34A' },
     { name: 'Beverages', orders: 75, percentage: 12, revenue: 1812.00, color: '#FACC15' },
   ];
 
+  const paletteColors = ['#F97316', '#3B82F6', '#16A34A', '#FACC15', '#8B5CF6'];
+
+  const categoryStats = serverAnalytics?.categoryBreakdown && serverAnalytics.categoryBreakdown.length > 0
+    ? serverAnalytics.categoryBreakdown.map((cat, idx) => ({
+        name: cat.categoryName,
+        orders: cat.ordersCount,
+        percentage: cat.percentageShare,
+        revenue: Number(cat.totalRevenue),
+        color: paletteColors[idx % paletteColors.length],
+      }))
+    : defaultCategoryStats;
+
   // Top selling items leaderboard
-  const topSellingItems = [
+  const defaultTopSellingItems = [
     { name: 'Royal Chicken Biryani', category: 'Rice', sold: 184, revenue: 2300.00, pct: 95 },
     { name: 'Fragrant Ghee Rice & Curry', category: 'Rice', sold: 142, revenue: 1420.00, pct: 75 },
     { name: 'Crispy Veggie Samosas (4 pcs)', category: 'Snacks', sold: 128, revenue: 704.00, pct: 68 },
     { name: 'Silky Caramel Pudding', category: 'Desserts', sold: 98, revenue: 470.40, pct: 52 },
     { name: 'Fresh Mint Lime Soda', category: 'Beverages', sold: 86, revenue: 301.00, pct: 45 },
   ];
+
+  const topSellingItems = serverAnalytics?.topSellingItems && serverAnalytics.topSellingItems.length > 0
+    ? serverAnalytics.topSellingItems.map((item, idx) => ({
+        name: item.itemName,
+        category: item.categoryName,
+        sold: item.totalQuantitySold,
+        revenue: Number(item.totalRevenue),
+        pct: Math.max(20, 100 - idx * 15),
+      }))
+    : defaultTopSellingItems;
 
   return (
     <Box sx={{ p: { xs: 2, sm: 3 }, maxWidth: 1400, mx: 'auto' }}>

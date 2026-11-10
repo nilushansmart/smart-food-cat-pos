@@ -43,6 +43,7 @@ export const OrdersList = () => {
     cancelOrder,
     cateringSettings,
     currentUser,
+    prepareWhatsAppShare,
   } = useApp();
 
   const theme = useTheme();
@@ -76,13 +77,29 @@ export const OrdersList = () => {
     setSelectedOrderForAction(null);
   };
 
-  const handleWhatsApp = (order) => {
+  const handleWhatsApp = async (order) => {
+    try {
+      const serverUrl = await prepareWhatsAppShare(order.id);
+      if (serverUrl) {
+        window.open(serverUrl, '_blank');
+        handleCloseMenu();
+        return;
+      }
+    } catch {
+      // ignore
+    }
     const url = formatWhatsAppReceipt(order, cateringSettings);
     window.open(url, '_blank');
     handleCloseMenu();
   };
 
   const handlePdf = (order) => {
+    const id = order.numericId || order.id;
+    if (typeof id === 'number') {
+      window.open(`/api/receipts/${id}/view`, '_blank');
+      handleCloseMenu();
+      return;
+    }
     generatePdfReceipt(order, cateringSettings);
     handleCloseMenu();
   };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -23,6 +23,7 @@ import PrintIcon from '@mui/icons-material/Print';
 import { useApp } from '../../context/AppContext';
 import { StatusBadge } from '../common/StatusBadge';
 import { NumberCounter } from '../common/NumberCounter';
+import { reportsApi } from '../../api';
 
 export const DailyIncome = () => {
   const { orders, openReceiptModal } = useApp();
@@ -32,6 +33,25 @@ export const DailyIncome = () => {
   const [selectedDate, setSelectedDate] = useState(() => {
     return new Date().toISOString().split('T')[0];
   });
+  const [serverReport, setServerReport] = useState(null);
+
+  // Sync with backend /api/reports/daily
+  useEffect(() => {
+    let isMounted = true;
+    reportsApi
+      .getDailyIncome(selectedDate)
+      .then((res) => {
+        if (isMounted && res?.data) {
+          setServerReport(res.data);
+        }
+      })
+      .catch(() => {
+        // Fallback to local calculation
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedDate]);
 
   // Filter orders matching selected date
   const dayOrders = orders.filter((order) => {
@@ -40,10 +60,16 @@ export const DailyIncome = () => {
   });
 
   const validDayOrders = dayOrders.filter((o) => o.status !== 'Cancelled');
-  const dayTotalIncome = validDayOrders.reduce((sum, o) => sum + o.total, 0);
+  const dayTotalIncome = serverReport?.totalIncome !== undefined && serverReport.totalIncome > 0
+    ? Number(serverReport.totalIncome)
+    : validDayOrders.reduce((sum, o) => sum + o.total, 0);
   const daySubtotal = validDayOrders.reduce((sum, o) => sum + o.subtotal, 0);
   const dayTax = validDayOrders.reduce((sum, o) => sum + o.tax, 0);
-  const avgOrderValue = validDayOrders.length > 0 ? dayTotalIncome / validDayOrders.length : 0;
+  const avgOrderValue = serverReport?.averageOrderValue !== undefined && serverReport.averageOrderValue > 0
+    ? Number(serverReport.averageOrderValue)
+    : validDayOrders.length > 0
+    ? dayTotalIncome / validDayOrders.length
+    : 0;
 
   const handlePrintReport = () => {
     window.print();

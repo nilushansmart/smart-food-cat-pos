@@ -81,7 +81,8 @@ public class OrderServiceImpl implements OrderService {
                 .orderType(request.getOrderType() != null ? request.getOrderType() : OrderType.ONLINE_DELIVERY)
                 .status(OrderStatus.PENDING)
                 .paymentStatus(request.getPaymentStatus() != null ? request.getPaymentStatus() : PaymentStatus.PENDING)
-                .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : PaymentMethod.CASH_ON_DELIVERY)
+                .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod()
+                        : PaymentMethod.CASH_ON_DELIVERY)
                 .eventDate(request.getEventDate() != null ? request.getEventDate() : LocalDate.now())
                 .eventTime(request.getEventTime())
                 .eventType(request.getEventType())
@@ -93,7 +94,8 @@ public class OrderServiceImpl implements OrderService {
                 .items(new ArrayList<>())
                 .build();
 
-        // Server-side calculation of line items and subtotal (never trust client amounts!)
+        // Server-side calculation of line items and subtotal (never trust client
+        // amounts!)
         BigDecimal subtotal = BigDecimal.ZERO;
 
         for (OrderItemRequest itemReq : request.getItems()) {
@@ -122,7 +124,8 @@ public class OrderServiceImpl implements OrderService {
             subtotal = subtotal.add(itemSubtotal);
         }
 
-        BigDecimal taxRate = cateringProperties.getTaxRate() != null ? cateringProperties.getTaxRate() : new BigDecimal("0.05");
+        BigDecimal taxRate = cateringProperties.getTaxRate() != null ? cateringProperties.getTaxRate()
+                : new BigDecimal("0.05");
         BigDecimal taxAmount = subtotal.multiply(taxRate).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totalAmount = subtotal.add(taxAmount).setScale(2, RoundingMode.HALF_UP);
 
@@ -133,13 +136,15 @@ public class OrderServiceImpl implements OrderService {
         // Google Maps integration for delivery address ETA & Distance
         if (order.getOrderType() == OrderType.ONLINE_DELIVERY && StringUtils.hasText(order.getDeliveryAddress())) {
             try {
-                DistanceMatrixResponse distanceMatrix = googleMapsService.calculateDistanceAndEta(order.getDeliveryAddress());
+                DistanceMatrixResponse distanceMatrix = googleMapsService
+                        .calculateDistanceAndEta(order.getDeliveryAddress());
                 if (distanceMatrix != null) {
                     order.setDeliveryDistanceKm(distanceMatrix.getDistanceKm());
                     order.setEstimatedDeliveryTime(distanceMatrix.getDurationText());
                 }
             } catch (Exception e) {
-                log.warn("Failed to calculate distance for delivery address '{}': {}", order.getDeliveryAddress(), e.getMessage());
+                log.warn("Failed to calculate distance for delivery address '{}': {}", order.getDeliveryAddress(),
+                        e.getMessage());
             }
         }
 

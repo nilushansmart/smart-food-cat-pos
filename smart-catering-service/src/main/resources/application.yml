@@ -67,4 +67,3 @@ logging:
     root: INFO
     com.cateringpos: DEBUG
     org.springframework.security: INFO
-

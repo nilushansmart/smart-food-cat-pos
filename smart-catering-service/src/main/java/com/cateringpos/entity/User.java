@@ -51,7 +51,7 @@ public class User extends BaseEntity {
 
     @Builder
     public User(Long id, String username, String email, String passwordHash, String password,
-                String fullName, String phone, Role role, Boolean active, String branchId) {
+            String fullName, String phone, Role role, Boolean active, String branchId) {
         this.id = id;
         this.username = username;
         this.email = email;
